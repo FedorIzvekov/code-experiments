@@ -4,6 +4,7 @@ import java.util.Arrays;
 import javax.annotation.PostConstruct;
 import com.fedorizvekov.enums.DynamicEnum;
 import com.fedorizvekov.service.DynamicCreationEnum;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/enums")
+@RequiredArgsConstructor
 public class EnumController {
 
     @Value("${dynamic.enums}")
     private String[] enums;
-
-    public EnumController() {}
 
 
     @PostConstruct

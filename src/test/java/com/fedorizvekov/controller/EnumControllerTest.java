@@ -6,19 +6,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
-@RunWith(SpringRunner.class)
 @WebMvcTest
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(OrderAnnotation.class)
 public class EnumControllerTest {
 
     @InjectMocks
@@ -28,20 +27,24 @@ public class EnumControllerTest {
     private MockMvc mockMvc;
 
 
+    @DisplayName("Should invoke addEnum and return OK")
     @Test
-    public void should_invoke_addEnum_and_return_OK() throws Exception {
+    @Order(1)
+    void should_invoke_addEnum_and_return_OK() throws Exception {
         mockMvc.perform(put("/enums/{newEnum}", "test_enum"))
                 .andDo(print())
                 .andExpect(status().isOk());
     }
 
 
+    @DisplayName("Should return OK and DynamicEnum values as string")
     @Test
-    public void should_return_OK_and_DynamicEnum_values_as_string() throws Exception {
+    @Order(2)
+    void should_return_OK_and_DynamicEnum_values_as_string() throws Exception {
         mockMvc.perform(get("/enums"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().string("[FIRST_ENUM, SECOND_ENUM, TEST_ENUM]"));
+                .andExpect(content().string("[FIRST_ENUM, TEST_ENUM, SECOND_ENUM]"));
     }
 
 }

@@ -1,53 +1,50 @@
 package com.fedorizvekov.service;
 
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.stream;
+
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sun.reflect.ConstructorAccessor;
-import sun.reflect.FieldAccessor;
-import sun.reflect.ReflectionFactory;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import jdk.internal.reflect.ReflectionFactory;
+import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 
+@Log4j2
 public class DynamicCreationEnum {
 
-    private static final Logger log = LoggerFactory.getLogger(DynamicCreationEnum.class);
     private static final ReflectionFactory reflectionFactory = ReflectionFactory.getReflectionFactory();
 
 
+    /**
+     * Adds a new enum instance to the specified enum class.
+     *
+     * @param <T>      the type of the enum (implicit)
+     * @param enumType the class of the enum to be modified.
+     * @param enumName the name of the new enum instance to be added to the class.
+     * @throws RuntimeException if an exception occurs during the operation, including reflection-related issues.
+     */
     @SuppressWarnings("unchecked")
     public static <T extends Enum<?>> void addEnum(Class<T> enumType, String enumName) {
 
         try {
-
-            Field enumValuesField = null;
-            Field[] fields = enumType.getDeclaredFields();
-            for (Field field : fields) {
-                if (field.getName().contains("$VALUES")) {
-                    enumValuesField = field;
-                    break;
-                }
-            }
+            var enumValuesField = stream(enumType.getDeclaredFields())
+                    .filter(field -> field.getName().contains("$VALUES"))
+                    .findFirst()
+                    .orElseThrow(() -> new NoSuchFieldException("$VALUES field not found"));
 
             AccessibleObject.setAccessible(new Field[]{enumValuesField}, true);
-            T[] previousValues = (T[]) enumValuesField.get(enumType);
+            var previousValues = (T[]) enumValuesField.get(enumType);
+            var enumMap = stream(previousValues).collect(Collectors.toMap(Enum::name, Function.identity()));
 
-            Map<String, T> values = new HashMap<>(previousValues.length + 1);
+            if (!enumMap.containsKey(enumName.toUpperCase())) {
 
-            for (T enm : previousValues) {
-                values.put(enm.name(), enm);
-            }
-
-            if (!values.containsKey(enumName.toUpperCase())) {
-
-                T newValue = (T) makeEnum(enumType, enumName.toUpperCase(), values.size(), new Class<?>[]{}, new Object[]{});
-                values.put(newValue.name(), newValue);
-                setFinalStaticField(enumValuesField, null, values.values().toArray((T[]) Array.newInstance(enumType, 0)));
+                var newValue = (T) makeEnum(enumType, enumName.toUpperCase(), enumMap.size(), new Class<?>[]{}, new Object[]{});
+                enumMap.put(newValue.name(), newValue);
+                setFinalStaticField(enumValuesField, null, enumMap.values().toArray((T[]) Array.newInstance(enumType, 0)));
                 cleanEnumCache(enumType);
 
             } else {
@@ -61,54 +58,55 @@ public class DynamicCreationEnum {
     }
 
 
-    private static Object makeEnum(Class<?> enumClass, String value, int ordinal, Class<?>[] additionalTypes, Object[] additionalValues)
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException {
+    private static <T> Object makeEnum(Class<?> enumClass, String value, int ordinal, Class<?>[] additionalTypes, Object[] additionalValues) throws Exception {
 
-        Class<?>[] types = new Class[additionalTypes.length + 2];
+        var types = new Class[additionalTypes.length + 2];
         types[0] = String.class;
         types[1] = int.class;
-        System.arraycopy(additionalTypes, 0, types, 2, additionalTypes.length);
+        arraycopy(additionalTypes, 0, types, 2, additionalTypes.length);
 
-        Constructor<?> constructor = enumClass.getDeclaredConstructor(types);
+        var constructor = enumClass.getDeclaredConstructor(types);
         constructor.setAccessible(true);
 
-        Object[] params = new Object[additionalValues.length + 2];
+        var params = new Object[additionalValues.length + 2];
         params[0] = value;
         params[1] = ordinal;
-        System.arraycopy(additionalValues, 0, params, 2, additionalValues.length);
+        arraycopy(additionalValues, 0, params, 2, additionalValues.length);
 
-        ConstructorAccessor constructorAccessor = reflectionFactory.newConstructorAccessor(constructor);
+        var constructorAccessor = reflectionFactory.newConstructorAccessor(constructor);
         return enumClass.cast(constructorAccessor.newInstance(params));
     }
 
 
-    private static void setFinalStaticField(Field field, Object target, Object value) throws IllegalAccessException, NoSuchFieldException {
+    @SneakyThrows
+    private static void setFinalStaticField(Field field, Object target, Object value) {
 
         field.setAccessible(true);
 
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        var getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        getDeclaredFields0.setAccessible(true);
+        var fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+
+        var modifiersField = stream(fields)
+                .filter(declaredField -> "modifiers".equals(declaredField.getName()))
+                .findFirst()
+                .orElse(null);
+
         modifiersField.setAccessible(true);
-        int modifiers = modifiersField.getInt(field);
+        modifiersField.setInt(field, modifiersField.getInt(field) & ~Modifier.FINAL);
 
-        modifiers &= ~Modifier.FINAL;
-        modifiersField.setInt(field, modifiers);
-
-        FieldAccessor fieldAccessor = reflectionFactory.newFieldAccessor(field, false);
+        var fieldAccessor = reflectionFactory.newFieldAccessor(field, true);
         fieldAccessor.set(target, value);
     }
 
 
-    private static void cleanEnumCache(Class<?> enumClass) throws IllegalAccessException, NoSuchFieldException {
-
-        for (Field field : Class.class.getDeclaredFields()) {
-
-            String fieldName = field.getName();
-
-            if (fieldName.contains("enumConstantDirectory") || fieldName.contains("enumConstants")) {
-                AccessibleObject.setAccessible(new Field[]{field}, true);
-                setFinalStaticField(field, enumClass, null);
-            }
-        }
+    private static void cleanEnumCache(Class<?> enumClass) {
+        stream(Class.class.getDeclaredFields())
+                .filter(field -> field.getName().contains("enumConstantDirectory") || field.getName().contains("enumConstants"))
+                .forEach(field -> {
+                    field.setAccessible(true);
+                    setFinalStaticField(field, enumClass, null);
+                });
     }
 
 }

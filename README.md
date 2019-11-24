@@ -5,9 +5,14 @@ Reflection experiment
 ```
 cd <projects_directory>/dynamic-enum
 
+gradle wrapper --gradle-version <gradle_version> --stacktrace --info
+
 ./gradlew clean build
 
-java -jar ./build/libs/dynamic-enum-1.0.0-SNAPSHOT.jar
+java --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED \
+    --add-opens=java.base/java.lang=ALL-UNNAMED \
+    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+    -jar ./build/libs/dynamic-enum-1.0.0-SNAPSHOT.jar
 ```
 
 
