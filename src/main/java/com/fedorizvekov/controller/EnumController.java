@@ -1,9 +1,9 @@
 package com.fedorizvekov.controller;
 
 import java.util.Arrays;
-import javax.annotation.PostConstruct;
 import com.fedorizvekov.enums.DynamicEnum;
 import com.fedorizvekov.service.DynamicCreationEnum;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;

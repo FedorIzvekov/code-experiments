@@ -1,7 +1,11 @@
 # Dynamic Enum
-Reflection experiment
+Goal of this project is to explore capabilities of Java 11 - 17 and reflection by dynamically creating enums at runtime. 
+This project is purely experimental and not intended for use in real-world projects.
 
-* Run:
+## Setup
+JDK 11 - 17
+
+## Build and Run:
 ```
 cd <projects_directory>/dynamic-enum
 
@@ -16,14 +20,14 @@ java --add-opens=java.base/jdk.internal.reflect=ALL-UNNAMED \
 ```
 
 
-* Check:
+## Check:
 
-To retrieve all enums:
+### To retrieve all enums:
 ```
 curl -v http://localhost:8080/enums
 ```
 
-To add a new enum:
+### To add a new enum:
 ```
 curl -v -X PUT http://localhost:8080/enums/<enum_name>
 ```
