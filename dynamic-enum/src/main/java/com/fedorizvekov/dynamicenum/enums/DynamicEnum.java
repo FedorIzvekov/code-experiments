@@ -1,4 +1,4 @@
-package com.fedorizvekov.enums;
+package com.fedorizvekov.dynamicenum.enums;
 
 /**
  * DynamicEnum instances are created in DynamicCreationEnum using the reflection mechanism.

@@ -1,8 +1,8 @@
-package com.fedorizvekov.controller;
+package com.fedorizvekov.dynamicenum.controller;
 
 import java.util.Arrays;
-import com.fedorizvekov.enums.DynamicEnum;
-import com.fedorizvekov.service.DynamicCreationEnum;
+import com.fedorizvekov.dynamicenum.enums.DynamicEnum;
+import com.fedorizvekov.dynamicenum.service.DynamicCreationEnum;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

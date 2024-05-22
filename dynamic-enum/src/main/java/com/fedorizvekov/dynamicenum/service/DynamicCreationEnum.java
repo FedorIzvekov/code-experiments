@@ -1,4 +1,4 @@
-package com.fedorizvekov.service;
+package com.fedorizvekov.dynamicenum.service;
 
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.stream;
